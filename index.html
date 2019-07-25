@@ -23,7 +23,7 @@
     <div id="3d-graph"></div>
 
   <script>
-	var socket = new WebSocket(((window.location.protocol === "https:") ? "ws://" : "ws://") + "159.69.158.51" + "/datastream");
+	var socket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + "159.69.158.51" + "/datastream");
 
 	socket.onopen = function () {
         setInterval(function() {
