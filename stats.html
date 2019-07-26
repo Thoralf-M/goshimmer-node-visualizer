@@ -130,10 +130,10 @@
         let neighbors = []
         for (let j = 0; j < data.links.length; j++) {
           if (data.links[j].source == nodeid || data.links[j].target == nodeid) {
-            if (data.links[j].source == nodeid && neighbors.indexOf(data.links[j].target) == -1) {
+            if (data.links[j].source == nodeid && neighbors.indexOf(data.links[j].target) == -1 && onlineNodes.indexOf(data.links[j].target) != -1) {
               neighbors.push(data.links[j].target)
               links++
-            } else if (data.links[j].target == nodeid && neighbors.indexOf(data.links[j].source) == -1) {
+            } else if (data.links[j].target == nodeid && neighbors.indexOf(data.links[j].source) == -1 && onlineNodes.indexOf(data.links[j].target) != -1) {
               neighbors.push(data.links[j].source)
               links++
             }
