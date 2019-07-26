@@ -83,11 +83,20 @@
         .graphData(data)
         .nodeLabel(node => {
           let links = 0
-          for(let j=0; j<data.links.length; j++){
-            if(data.links[j].source.id == node.id || data.links[j].target.id == node.id){
-              links++
+          let neighbors = []
+          for (let j = 0; j < data.links.length; j++) {
+            if (data.links[j].source.id == node.id || data.links[j].target.id == node.id) {
+              if (data.links[j].source.id == node.id && neighbors.indexOf(data.links[j].target.id) == -1) {
+                neighbors.push(data.links[j].target.id)
+                links++
+              } else if (data.links[j].target.id == node.id && neighbors.indexOf(data.links[j].source.id) == -1) {
+                neighbors.push(data.links[j].source.id)
+                links++
+              }
             }
           }
+          console.log("neighbors: "+neighbors.length);
+          console.log(neighbors);
           return `id: ${node.id} connections: ${links}`
         })
         .height(window.innerHeight-41)
