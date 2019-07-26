@@ -27,7 +27,7 @@
 <body>
     <div style="padding: 10px;">
         <span style="color:#7fff7f;  padding-right: 10px" id="nodes_online">Nodes online: 0</span>
-        <span style="color:#ffcc7f;  padding-right: 10px" id="neighbors_avg">Avg. neighbors: 0</span>
+        <span style="color:#ffcc7f;  padding-right: 10px" id="neighbors_avg">Avg. number of neighbors: 0</span>
         <a style="padding-left: 120px" href="index.html">3d view</a>
     </div> 
     
@@ -111,7 +111,7 @@
       
       neighborcount()
       let avgneighbors = average( onlineNodesNeighborcount); 
-      document.getElementById("neighbors_avg").innerHTML = "Avg. neighbors: "+avgneighbors.toFixed(2)
+      document.getElementById("neighbors_avg").innerHTML = "Avg. number of neighbors: "+avgneighbors.toFixed(2)
 
       let nodeData = []
       for (let k = 0; k < onlineNodes.length; k++) {
