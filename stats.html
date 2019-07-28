@@ -27,16 +27,19 @@
 <body>
     <div style="padding: 10px;">
         <span style="color:#7fff7f;  padding-right: 10px" id="nodes_online">Nodes online: 0</span>
-        <span style="color:#ffcc7f;  padding-right: 10px" id="neighbors_avg">Avg. number of neighbors: 0</span>
+        <span style="color:#ffcc7f;  padding-right: 10px" id="neighbors_avg">Avg. links: 0</span>
         <a style="padding-left: 120px" href="index.html">3d view</a>
     </div> 
+    <span>A higher number doesn't have to mean there are so many neighbors</span>
     
     <div>
 
       <table id="table">
         <tr>
           <th>ID</th>
-          <th>neighbors</th>
+          <th>source</th>
+          <th>target links</th>
+          <th>total links</th>
         </tr>
       </table>
     </div>
@@ -84,7 +87,9 @@
 	};
 
     var onlineNodes = []
-    var onlineNodesNeighborcount = []
+    var total_connections = []
+    var source_links = []
+    var target_links = []
     var nodesById = {};
     var existingLinks = {};
     const data = {
@@ -101,21 +106,22 @@
 
     setInterval(function() {
       update()
-    }, 5000)
+    }, 2000)
 
 
     function update(){
+      data.links = removeDuplicates(data.links)
       let onlinn = data.nodes.filter(n => n.online)
       onlineNodes = onlinn.map(n => n.id)
       document.getElementById("nodes_online").innerHTML = "Nodes online: "+onlineNodes.length
       
       neighborcount()
-      let avgneighbors = average( onlineNodesNeighborcount); 
-      document.getElementById("neighbors_avg").innerHTML = "Avg. number of neighbors: "+avgneighbors.toFixed(2)
+      let avgneighbors = average( total_connections); 
+      document.getElementById("neighbors_avg").innerHTML = "Avg. connections: "+avgneighbors.toFixed(2)
 
       let nodeData = []
       for (let k = 0; k < onlineNodes.length; k++) {
-        nodeData[k] = {"node":onlineNodes[k], "neighborcount":onlineNodesNeighborcount[k]}
+        nodeData[k] = {"node":onlineNodes[k], "neighborcount":total_connections[k], "source_links":source_links[k], "target_links":target_links[k]}
       }
       updateTable(nodeData);
     }
@@ -123,29 +129,59 @@
     const average = arr => arr.reduce( ( p, c ) => p + c, 0 ) / arr.length;
 
     function neighborcount() {
-      onlineNodesNeighborcount=[]
+      total_connections=[]
+      source_links=[]
+      target_links=[]
       for (let k = 0; k < onlineNodes.length; k++) {
         let nodeid = onlineNodes[k]
-        let links = 0
+        let source_links_count = 0
+        let target_links_count = 0
+        let all_links = 0
         let neighbors = []
         for (let j = 0; j < data.links.length; j++) {
-          if (data.links[j].source == nodeid || data.links[j].target == nodeid) {
-            if (data.links[j].source == nodeid && neighbors.indexOf(data.links[j].target) == -1 && onlineNodes.indexOf(data.links[j].target) != -1) {
-              neighbors.push(data.links[j].target)
-              links++
-            } else if (data.links[j].target == nodeid && neighbors.indexOf(data.links[j].source) == -1 && onlineNodes.indexOf(data.links[j].target) != -1) {
-              neighbors.push(data.links[j].source)
-              links++
-            }
+          if (data.links[j].source == nodeid && onlineNodes.indexOf(data.links[j].target) != -1){
+            neighbors.push(data.links[j].target)
+            source_links_count++
+          }
+          if (data.links[j].target == nodeid && onlineNodes.indexOf(data.links[j].target) != -1){
+            neighbors.push(data.links[j].source)
+            target_links_count++
           }
         }
-        onlineNodesNeighborcount.push(links)
+        // let accepted_neighbors = []
+        // accepted_neighbors=findDuplicates(neighbors)
+        all_links = neighbors.length
+
+        source_links.push(source_links_count)
+        target_links.push(target_links_count)
+        total_connections.push(all_links)
       }
+    }
+
+    function findDuplicates(data) {
+        let result = [];
+        data.forEach(function (element, index) {
+          // Find if there is a duplicate or not
+          if (data.indexOf(element, index + 1) > -1) {
+            // Find if the element is already in the result array or not
+            if (result.indexOf(element) === -1) {
+              result.push(element);
+            }
+          }
+        });
+        return result;
+    }
+
+    function removeDuplicates(arr) {
+        return Object.keys(arr.reduce((acc, val) => {
+          acc[JSON.stringify(val)] = 1;
+          return acc;
+        }, {})).map((val, key, array) => JSON.parse(array[key]))
     }
 
     function updateTable(nodeData) {
       var Table = document.getElementById("table");
-      Table.innerHTML = "<tr>\r\n<th>ID<\/th>\r\n<th>neighbors<\/th>\r\n<\/tr>";
+      Table.innerHTML = "<tr>\r\n<th>ID<\/th>\r\n<th>source<\/th>\r\n<th>target<\/th>\r\n<th>total links<\/th>\r\n<\/tr>";
         nodeData.sort(function (a, b) {
         return ((a.neighborcount > b.neighborcount) ? -1 : ((a.neighborcount == b.neighborcount) ? 0 : 1));
       });
@@ -155,8 +191,12 @@
         var x = document.getElementById('table').insertRow();
         var y = x.insertCell(0);
         var z = x.insertCell(1);
+        var v = x.insertCell(2);
+        var w = x.insertCell(3);
         y.innerHTML = nodeData[j].node;
-        z.innerHTML = nodeData[j].neighborcount;
+        z.innerHTML = nodeData[j].source_links;
+        v.innerHTML = nodeData[j].target_links;
+        w.innerHTML = nodeData[j].neighborcount;
       }
     }
 
@@ -195,7 +235,7 @@
     }
 
     function disconnectNodes(sourceNodeId, targetNodeId) {
-      data.links = data.links.filter(l => !(l.source.id == sourceNodeId && l.target.id == targetNodeId) && !(l.source.id == targetNodeId && l.target.id == sourceNodeId));
+      data.links = data.links.filter(l => !(l.source == sourceNodeId && l.target == targetNodeId) && !(l.source == targetNodeId && l.target == sourceNodeId));
 
       delete existingLinks[sourceNodeId + targetNodeId];
       delete existingLinks[targetNodeId + sourceNodeId];
