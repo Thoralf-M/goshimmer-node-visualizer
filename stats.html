@@ -27,7 +27,7 @@
 <body>
     <div style="padding: 10px;">
         <span style="color:#7fff7f;  padding-right: 10px" id="nodes_online">Nodes online: 0</span>
-        <span style="color:#ffcc7f;  padding-right: 10px" id="neighbors_avg">Avg. links: 0</span>
+        <span style="color:#ffcc7f;  padding-right: 10px" id="neighbors_avg">Avg. total links: 0</span>
         <a style="padding-left: 120px" href="index.html">3d view</a>
     </div> 
     <span>A higher number doesn't have to mean there are so many neighbors</span>
@@ -117,7 +117,7 @@
       
       neighborcount()
       let avgneighbors = average( total_links); 
-      document.getElementById("neighbors_avg").innerHTML = "Avg. links: "+avgneighbors.toFixed(2)
+      document.getElementById("neighbors_avg").innerHTML = "Avg. total links: "+avgneighbors.toFixed(2)
 
       let nodeData = []
       for (let k = 0; k < onlineNodes.length; k++) {
