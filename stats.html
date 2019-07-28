@@ -87,7 +87,7 @@
 	};
 
     var onlineNodes = []
-    var total_connections = []
+    var total_links = []
     var source_links = []
     var target_links = []
     var nodesById = {};
@@ -116,12 +116,12 @@
       document.getElementById("nodes_online").innerHTML = "Nodes online: "+onlineNodes.length
       
       neighborcount()
-      let avgneighbors = average( total_connections); 
-      document.getElementById("neighbors_avg").innerHTML = "Avg. connections: "+avgneighbors.toFixed(2)
+      let avgneighbors = average( total_links); 
+      document.getElementById("neighbors_avg").innerHTML = "Avg. links: "+avgneighbors.toFixed(2)
 
       let nodeData = []
       for (let k = 0; k < onlineNodes.length; k++) {
-        nodeData[k] = {"node":onlineNodes[k], "neighborcount":total_connections[k], "source_links":source_links[k], "target_links":target_links[k]}
+        nodeData[k] = {"node":onlineNodes[k], "neighborcount":total_links[k], "source_links":source_links[k], "target_links":target_links[k]}
       }
       updateTable(nodeData);
     }
@@ -129,7 +129,7 @@
     const average = arr => arr.reduce( ( p, c ) => p + c, 0 ) / arr.length;
 
     function neighborcount() {
-      total_connections=[]
+      total_links=[]
       source_links=[]
       target_links=[]
       for (let k = 0; k < onlineNodes.length; k++) {
@@ -154,7 +154,7 @@
 
         source_links.push(source_links_count)
         target_links.push(target_links_count)
-        total_connections.push(all_links)
+        total_links.push(all_links)
       }
     }
 
