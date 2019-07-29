@@ -27,6 +27,7 @@
 <body>
     <div style="padding: 10px;">
         <span style="color:#7fff7f;  padding-right: 10px" id="nodes_online">Nodes online: 0</span>
+        <span style="color:#7fff7f;  padding-right: 10px" id="all_accepted_connections">Accepted connections: 0</span>
         <span style="color:#ffcc7f;  padding-right: 10px" id="neighbors_avg">Avg. total links: 0</span>
         <a style="padding-left: 120px" href="index.html">3d view</a>
     </div> 
@@ -40,6 +41,8 @@
           <th>source</th>
           <th>target links</th>
           <th>total links</th>
+          <th>accepted links</th>
+          <th>accepted neighbors</th>
         </tr>
       </table>
     </div>
@@ -90,6 +93,8 @@
     var total_links = []
     var source_links = []
     var target_links = []
+    var accepted_links = []
+    var accepted_neighbors = []
     var nodesById = {};
     var existingLinks = {};
     const data = {
@@ -106,7 +111,7 @@
 
     setInterval(function() {
       update()
-    }, 2000)
+    }, 3000)
 
 
     function update(){
@@ -115,23 +120,26 @@
       onlineNodes = onlinn.map(n => n.id)
       document.getElementById("nodes_online").innerHTML = "Nodes online: "+onlineNodes.length
       
-      neighborcount()
+      linkcount()
       let avgneighbors = average( total_links); 
       document.getElementById("neighbors_avg").innerHTML = "Avg. total links: "+avgneighbors.toFixed(2)
+      document.getElementById("all_accepted_connections").innerHTML = "Accepted connections: "+accepted_links.reduce((a,b) => a + b, 0)
 
       let nodeData = []
       for (let k = 0; k < onlineNodes.length; k++) {
-        nodeData[k] = {"node":onlineNodes[k], "neighborcount":total_links[k], "source_links":source_links[k], "target_links":target_links[k]}
+        nodeData[k] = {"node":onlineNodes[k], "linkcount":total_links[k], "source_links":source_links[k], "target_links":target_links[k], "accepted_links": accepted_links[k], "accepted_neighbors":accepted_neighbors[k]}
       }
       updateTable(nodeData);
     }
 
     const average = arr => arr.reduce( ( p, c ) => p + c, 0 ) / arr.length;
 
-    function neighborcount() {
+    function linkcount() {
       total_links=[]
       source_links=[]
       target_links=[]
+      accepted_links=[]
+      accepted_neighbors=[]
       for (let k = 0; k < onlineNodes.length; k++) {
         let nodeid = onlineNodes[k]
         let source_links_count = 0
@@ -148,13 +156,16 @@
             target_links_count++
           }
         }
-        // let accepted_neighbors = []
-        // accepted_neighbors=findDuplicates(neighbors)
+        let accepted_nodes = []
+        accepted_nodes=findDuplicates(neighbors)
+        accepted_neighbors.push(accepted_nodes)
+
         all_links = neighbors.length
 
         source_links.push(source_links_count)
         target_links.push(target_links_count)
         total_links.push(all_links)
+        accepted_links.push(accepted_nodes.length)
       }
     }
 
@@ -181,9 +192,9 @@
 
     function updateTable(nodeData) {
       var Table = document.getElementById("table");
-      Table.innerHTML = "<tr>\r\n<th>ID<\/th>\r\n<th>source<\/th>\r\n<th>target<\/th>\r\n<th>total links<\/th>\r\n<\/tr>";
+      Table.innerHTML = "<tr>\r\n<th>ID<\/th>\r\n<th>source<\/th>\r\n<th>target<\/th>\r\n<th>total links<\/th>\r\n<th>accepted links<\/th>\r\n<th>accepted neighbors<\/th>\r\n<\/tr>";
         nodeData.sort(function (a, b) {
-        return ((a.neighborcount > b.neighborcount) ? -1 : ((a.neighborcount == b.neighborcount) ? 0 : 1));
+        return ((a.accepted_links > b.accepted_links) ? -1 : ((a.accepted_links == b.accepted_links) ? 0 : 1));
       });
 
 
@@ -193,10 +204,14 @@
         var z = x.insertCell(1);
         var v = x.insertCell(2);
         var w = x.insertCell(3);
+        var a = x.insertCell(4);
+        var b = x.insertCell(5);
         y.innerHTML = nodeData[j].node;
         z.innerHTML = nodeData[j].source_links;
         v.innerHTML = nodeData[j].target_links;
-        w.innerHTML = nodeData[j].neighborcount;
+        w.innerHTML = nodeData[j].linkcount;
+        a.innerHTML = nodeData[j].accepted_links;
+        b.innerHTML = nodeData[j].accepted_neighbors;
       }
     }
 

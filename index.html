@@ -1,72 +1,83 @@
 <html>
 
 <head>
-    <title>goshimmer</title>
+  <title>GoGoShimmer</title>
   <style>
     body {
       margin: 0;
     }
+
+    * {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+    }
   </style>
-  <script src="./3d-force-graph"></script>
+  <script src="https://unpkg.com/3d-force-graph"></script>
   <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 </head>
 
 <body>
-    <div style="padding: 10px;">
-        <input id="id-input" type="text" size ="40" name="node-id" placeholder="node-id">
-        <button id="id-input-button" value="Search" onclick="centerNode(document.getElementById('id-input').value)">Search</button>
-        <span>Left click on a node to center it, right click to copy the id</span>
-        <a style="padding-left: 120px" href="stats.html">table view</a>
-        <!-- <span style="color:red; float:right; " id="nodes_offline">Nodes offline: 0</span> -->
-        <span style="color:green; float:right; padding-right: 10px" id="nodes_online">Nodes online: 0</span>
-    </div> 
+  <div style="padding: 10px;">
+    <input id="id-input" type="text" size="40" name="node-id" placeholder="node-id">
+    <button id="id-input-button" value="Search"
+      onclick="centerNode(document.getElementById('id-input').value)">Search</button>
+    <span>Left click on a node to center it, right click to copy the id</span>
+    <a style="padding-left: 120px" href="stats.html">table view</a>
+    <!-- <span style="color:red; float:right; " id="nodes_offline">Nodes offline: 0</span> -->
+    <span style="color:green; float:right; padding-right: 10px" id="nodes_online">Nodes online: 0</span>
+  </div>
 
-    <div id="3d-graph"></div>
+  <div id="3d-graph"></div>
 
   <script>
-	var socket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + "159.69.158.51" + "/datastream");
+    var socket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + "159.69.158.51" + "/datastream");
 
-	socket.onopen = function () {
-        setInterval(function() {
-          socket.send("_");
-        }, 1000);
-	};
+    socket.onopen = function () {
+      setInterval(function () {
+        socket.send("_");
+      }, 1000);
+    };
 
-	socket.onmessage = function (e) {
-        switch (e.data[0]) {
-          case "_":
-            // do nothing - its just a ping
+    socket.onmessage = function (e) {
+      switch (e.data[0]) {
+        case "_":
+          // do nothing - its just a ping
           break;
 
-          case "A":
-             addNode(e.data.substr(1));
+        case "A":
+          addNode(e.data.substr(1));
           break;
 
-          case "a":
-             removeNode(e.data.substr(1));
+        case "a":
+          removeNode(e.data.substr(1));
           break;
 
-          case "C":
-             connectNodes(e.data.substr(1, 40), e.data.substr(41, 40));
+        case "C":
+          connectNodes(e.data.substr(1, 40), e.data.substr(41, 40));
           break;
 
-          case "c":
-             disconnectNodes(e.data.substr(1, 40), e.data.substr(41, 40));
+        case "c":
+          disconnectNodes(e.data.substr(1, 40), e.data.substr(41, 40));
           break;
 
-          case "O":
-             setNodeOnline(e.data.substr(1));
+        case "O":
+          setNodeOnline(e.data.substr(1));
           break;
 
-          case "o":
-             setNodeOffline(e.data.substr(1));
+        case "o":
+          setNodeOffline(e.data.substr(1));
           break;
-        }
-	};
+      }
+    };
 
     var nodesById = {};
 
     const data = {
+      nodes: [],
+      links: []
+    };
+
+    const data_online = {
       nodes: [],
       links: []
     };
@@ -76,80 +87,111 @@
     const elem = document.getElementById("3d-graph");
 
     const Graph = ForceGraph3D()(elem)
-        .enableNodeDrag(true)
-        .onNodeHover(node => elem.style.cursor = node ? 'pointer' : null)
-        .onNodeClick(node => centerNode(node.id))
-        .onNodeRightClick(node => copyId(node.id))
-        .nodeColor(node => node.online ? 'rgba(0,255,0,1)' : 'rgba(255,255,255,0.1)')
-        .graphData(data)
-        .nodeLabel(node => {
-          let links = 0
-          let neighbors = []
-          for (let j = 0; j < data.links.length; j++) {
-            if (data.links[j].source.id == node.id || data.links[j].target.id == node.id) {
-              if (data.links[j].source.id == node.id && neighbors.indexOf(data.links[j].target.id) == -1) {
-                neighbors.push(data.links[j].target.id)
-                links++
-              } else if (data.links[j].target.id == node.id && neighbors.indexOf(data.links[j].source.id) == -1) {
-                neighbors.push(data.links[j].source.id)
-                links++
-              }
+      .d3Force('center', null)
+      .nodeRelSize(2)
+      .d3Force('charge', null)
+      .cameraPosition({ z: 150 })
+      .enableNodeDrag(true)
+      .onNodeHover(node => elem.style.cursor = node ? 'pointer' : null)
+      .onNodeClick(node => centerNode(node.id))
+      .onNodeRightClick(node => copyId(node.id))
+      .nodeColor(node => node.online ? 'rgba(0,255,0,1)' : 'rgba(200,200,200,0.9)')
+      .graphData(data_online)
+      .linkOpacity(0.5)
+      .enableNavigationControls(true)
+      .nodeLabel(node => {
+        let links = 0
+        let neighbors = []
+        for (let j = 0; j < data.links.length; j++) {
+          if (data.links[j].source.id == node.id || data.links[j].target.id == node.id) {
+            if (data.links[j].source.id == node.id && neighbors.indexOf(data.links[j].target.id) == -1) {
+              neighbors.push(data.links[j].target.id)
+              links++
+            } else if (data.links[j].target.id == node.id && neighbors.indexOf(data.links[j].source.id) == -1) {
+              neighbors.push(data.links[j].source.id)
+              links++
             }
           }
-          console.log("neighbors: "+neighbors.length);
-          console.log(neighbors);
-          return `id: ${node.id} links: ${links}`
-        })
-        .height(window.innerHeight-41)
-        .width(window.innerWidth)
-
-        function centerNode(nodeId){
-          let node;
-          data.nodes.find(n => {
-            if (n.id == nodeId) {
-              node = n
-            }
-          })
-          const distance = 200;
-          const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
-          Graph.cameraPosition(
-            { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, // new position
-            node, // lookAt ({ x, y, z })
-            2000  // ms transition durationlogNodeId
-         )
         }
-        elem.height = 200;
+        console.log("neighbors: " + neighbors.length);
+        console.log(neighbors);
+        return `id: ${node.id} links: ${links}`
+      })
+      .height(window.innerHeight - 41)
+      .width(window.innerWidth)
 
 
 
-    var updateRequired = true;
+    function centerNode(nodeId) {
+      let node;
 
-    setInterval(function() {
+      data.nodes.find(n => {
+        if (n.id == nodeId) {
+          node = n;
+        }
+      })
+
+      const distance = 100;
+      const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+      Graph.cameraPosition(
+        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, // new position
+        node, // lookAt ({ x, y, z })
+        2000  // ms transition durationlogNodeId
+      )
+    }
+    elem.height = 200;
+
+
+
+    var updateRequired = true; //
+
+    setInterval(function () {
       if (updateRequired) {
         let online_nodes = 0
         let offline_nodes = 0
-        for(let i = 0; i<data.nodes.length; i++){
-          if(data.nodes[i].online == false){
+        for (let i = 0; i < data.nodes.length; i++) {
+          if (data.nodes[i].online == false) {
             deleteNodeLinks(data.nodes[i].id);
             offline_nodes++
           } else {
             online_nodes++
           }
         }
-        document.getElementById("nodes_online").innerHTML = "Nodes online: "+online_nodes
-        // document.getElementById("nodes_offline").innerHTML = "Nodes offline: "+offline_nodes
-        Graph.graphData(data);
+        document.getElementById("nodes_online").innerHTML = "Nodes online: " + online_nodes
+        //document.getElementById("nodes_offline").innerHTML = "Nodes offline: "+offline_nodes
+
+        const data_online = {
+          nodes: [],
+          links: []
+        };
+
+        for (let i = 0; i < data.nodes.length; i++) {
+          if (data.nodes[i].online == true) {
+            data_online.nodes = [...data_online.nodes, data.nodes[i]];
+          }
+        }
+
+        data_online.links = data.links;
+
+        for (let i = 0; i < data.nodes.length; i++) {
+          if (data_online.nodes.includes(data.nodes[i]) == false) {
+            data_online.links = data_online.links.filter(l => l.source !== data.nodes[i].id && l.target !== data.nodes[i].id);
+          }
+        }
+
+        Graph.graphData(data_online);
 
         updateRequired = false;
       }
     }, 3000)
 
-    updateGraph = function() {
-      updateRequired = true;
+    updateGraph = function () {
+      updateRequired = true; //
+      //centerNode(document.getElementById('id-input').value);
     };
 
     function addNode(nodeId, displayImmediately) {
-      node = {id : nodeId, online: false};
+      node = { id: nodeId, online: false };
 
       if (!(node.id in nodesById)) {
         data.nodes = [...data.nodes, node];
@@ -186,7 +228,7 @@
     }
 
     function connectNodes(sourceNodeId, targetNodeId) {
-      if(existingLinks[sourceNodeId + targetNodeId] == undefined && existingLinks[targetNodeId + sourceNodeId] == undefined) {
+      if (existingLinks[sourceNodeId + targetNodeId] == undefined && existingLinks[targetNodeId + sourceNodeId] == undefined) {
         data.links = [...data.links, { source: sourceNodeId, target: targetNodeId }];
 
         updateGraph();
@@ -209,12 +251,15 @@
     }
 
     function copyId(id) {
-        var $temp = $("<input>");
-        $("body").append($temp);
-        $temp.val(id).select();
-        document.execCommand("copy");
-        $temp.remove();
+      var $temp = $("<input>");
+      $("body").append($temp);
+      $temp.val(id).select();
+      document.execCommand("copy");
+      document.getElementById('id-input').value = id;
+      $temp.remove();
     }
 
   </script>
-</body></html>
+</body>
+
+</html>
