@@ -1,22 +1,25 @@
 <html>
 
 <head>
-    <title>goshimmer stats</title>
+  <title>goshimmer stats</title>
   <style>
     body {
       background-color: #202225;
       margin: 0;
       color: white;
     }
+
     table {
       border-spacing: 1;
       width: 40%;
       border: 1px solid rgb(110, 109, 109);
     }
+
     th, td {
       text-align: left;
       padding: 16px;
     }
+
     tr:nth-child(even) {
       background-color: #565a611c
     }
@@ -25,69 +28,67 @@
 </head>
 
 <body>
-    <div style="padding: 10px;">
-        <span style="color:#7fff7f;  padding-right: 10px" id="nodes_online">Nodes online: 0</span>
-        <span style="color:#7fff7f;  padding-right: 10px" id="all_accepted_connections">Accepted connections: 0</span>
-        <span style="color:#ffcc7f;  padding-right: 10px" id="neighbors_avg">Avg. total links: 0</span>
-        <a style="padding-left: 120px" href="index.html">3d view</a>
-    </div> 
-    <span>A higher number doesn't have to mean there are so many neighbors</span>
-    
-    <div>
+  <div style="padding: 10px;">
+    <span style="color:#7fff7f;  padding-right: 10px" id="nodes_online">Nodes online: 0</span>
+    <span style="color:#7fff7f;  padding-right: 10px" id="all_accepted_connections">Connections with the same id at source and target: 0</span>
+    <span style="color:#ffcc7f;  padding-right: 10px" id="neighbors_avg">Avg. total links: 0</span>
+    <a style="padding-left: 120px" href="index.html">3d view</a>
+  </div>
+  <span>A higher number doesn't have to mean there are so many neighbors</span>
 
-      <table id="table">
-        <tr>
-          <th>ID</th>
-          <th>source</th>
-          <th>target links</th>
-          <th>total links</th>
-          <th>accepted links</th>
-          <th>accepted neighbors</th>
-        </tr>
-      </table>
-    </div>
-
+  <div>
+    <table id="table">
+      <tr>
+        <th>ID</th>
+        <th>source</th>
+        <th>target links</th>
+        <th>total links</th>
+        <th>sourceID==targetID</th>
+        <th>neighbors with same id at source and target</th>
+      </tr>
+    </table>
+  </div>
 
   <script>
-	var socket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + "159.69.158.51" + "/datastream");
+    var socket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + "159.69.158.51" + "/datastream");
 
-	socket.onopen = function () {
-        setInterval(function() {
-          socket.send("_");
-        }, 1000);
-	};
+    socket.onopen = function () {
+      setInterval(function () {
+        socket.send("_");
+      }, 1000);
+    };
 
-	socket.onmessage = function (e) {
-        switch (e.data[0]) {
-          case "_":
-            // do nothing - its just a ping
+    socket.onmessage = function (e) {
+      switch (e.data[0]) {
+        case "_":
+          // do nothing - its just a ping
           break;
 
-          case "A":
-             addNode(e.data.substr(1));
+        case "A":
+          addNode(e.data.substr(1));
           break;
 
-          case "a":
-             removeNode(e.data.substr(1));
+        case "a":
+          removeNode(e.data.substr(1));
           break;
 
-          case "C":
-             connectNodes(e.data.substr(1, 40), e.data.substr(41, 40));
+        case "C":
+          connectNodes(e.data.substr(1, 40), e.data.substr(41, 40));
           break;
 
-          case "c":
-             disconnectNodes(e.data.substr(1, 40), e.data.substr(41, 40));
+        case "c":
+          disconnectNodes(e.data.substr(1, 40), e.data.substr(41, 40));
           break;
 
-          case "O":
-             setNodeOnline(e.data.substr(1));
+        case "O":
+          setNodeOnline(e.data.substr(1));
           break;
 
-          case "o":
-             setNodeOffline(e.data.substr(1));
+        case "o":
+          setNodeOffline(e.data.substr(1));
           break;
-        }
-	};
+      }
+    };
 
     var onlineNodes = []
     var total_links = []
@@ -102,44 +103,46 @@
       links: []
     };
 
-
     firstrun()
-    async function firstrun(){
+    async function firstrun() {
       await new Promise(resolve => setTimeout(resolve, 300));
       update()
     }
 
-    setInterval(function() {
+    setInterval(function () {
       update()
     }, 3000)
 
-
-    function update(){
-      data.links = removeDuplicates(data.links)
+    function update() {
       let onlinn = data.nodes.filter(n => n.online)
       onlineNodes = onlinn.map(n => n.id)
-      document.getElementById("nodes_online").innerHTML = "Nodes online: "+onlineNodes.length
-      
+      document.getElementById("nodes_online").innerHTML = "Nodes online: " + onlineNodes.length
+
+      data.links = removeDuplicates(data.links)
+      console.log(data.links.length);
+      data.links = data.links.filter(e => onlineNodes.indexOf(e.source) != -1 && onlineNodes.indexOf(e.target) != -1)
+      console.log(data.links.length);
+
       linkcount()
-      let avgneighbors = average( total_links); 
-      document.getElementById("neighbors_avg").innerHTML = "Avg. total links: "+avgneighbors.toFixed(2)
-      document.getElementById("all_accepted_connections").innerHTML = "Accepted connections: "+accepted_links.reduce((a,b) => a + b, 0)
+      let avgneighbors = average(total_links);
+      document.getElementById("neighbors_avg").innerHTML = "Avg. total links: " + avgneighbors.toFixed(2)
+      document.getElementById("all_accepted_connections").innerHTML = "Connections with the same id at source and target: " + accepted_links.reduce((a, b) => a + b, 0)
 
       let nodeData = []
       for (let k = 0; k < onlineNodes.length; k++) {
-        nodeData[k] = {"node":onlineNodes[k], "linkcount":total_links[k], "source_links":source_links[k], "target_links":target_links[k], "accepted_links": accepted_links[k], "accepted_neighbors":accepted_neighbors[k]}
+        nodeData[k] = { "node": onlineNodes[k], "linkcount": total_links[k], "source_links": source_links[k], "target_links": target_links[k], "accepted_links": accepted_links[k], "accepted_neighbors": accepted_neighbors[k] }
       }
       updateTable(nodeData);
     }
 
-    const average = arr => arr.reduce( ( p, c ) => p + c, 0 ) / arr.length;
+    const average = arr => arr.reduce((p, c) => p + c, 0) / arr.length;
 
     function linkcount() {
-      total_links=[]
-      source_links=[]
-      target_links=[]
-      accepted_links=[]
-      accepted_neighbors=[]
+      total_links = []
+      source_links = []
+      target_links = []
+      accepted_links = []
+      accepted_neighbors = []
       for (let k = 0; k < onlineNodes.length; k++) {
         let nodeid = onlineNodes[k]
         let source_links_count = 0
@@ -147,17 +150,17 @@
         let all_links = 0
         let neighbors = []
         for (let j = 0; j < data.links.length; j++) {
-          if (data.links[j].source == nodeid && onlineNodes.indexOf(data.links[j].target) != -1){
+          if (data.links[j].source == nodeid && onlineNodes.indexOf(data.links[j].target) != -1) {
             neighbors.push(data.links[j].target)
             source_links_count++
           }
-          if (data.links[j].target == nodeid && onlineNodes.indexOf(data.links[j].target) != -1){
+          if (data.links[j].target == nodeid && onlineNodes.indexOf(data.links[j].target) != -1) {
             neighbors.push(data.links[j].source)
             target_links_count++
           }
         }
         let accepted_nodes = []
-        accepted_nodes=findDuplicates(neighbors)
+        accepted_nodes = findDuplicates(neighbors)
         accepted_neighbors.push(accepted_nodes)
 
         all_links = neighbors.length
@@ -170,33 +173,32 @@
     }
 
     function findDuplicates(data) {
-        let result = [];
-        data.forEach(function (element, index) {
-          // Find if there is a duplicate or not
-          if (data.indexOf(element, index + 1) > -1) {
-            // Find if the element is already in the result array or not
-            if (result.indexOf(element) === -1) {
-              result.push(element);
-            }
+      let result = [];
+      data.forEach(function (element, index) {
+        // Find if there is a duplicate or not
+        if (data.indexOf(element, index + 1) > -1) {
+          // Find if the element is already in the result array or not
+          if (result.indexOf(element) === -1) {
+            result.push(element);
           }
-        });
-        return result;
+        }
+      });
+      return result;
     }
 
     function removeDuplicates(arr) {
-        return Object.keys(arr.reduce((acc, val) => {
-          acc[JSON.stringify(val)] = 1;
-          return acc;
-        }, {})).map((val, key, array) => JSON.parse(array[key]))
+      return Object.keys(arr.reduce((acc, val) => {
+        acc[JSON.stringify(val)] = 1;
+        return acc;
+      }, {})).map((val, key, array) => JSON.parse(array[key]))
     }
 
     function updateTable(nodeData) {
       var Table = document.getElementById("table");
-      Table.innerHTML = "<tr>\r\n<th>ID<\/th>\r\n<th>source<\/th>\r\n<th>target<\/th>\r\n<th>total links<\/th>\r\n<th>accepted links<\/th>\r\n<th>accepted neighbors<\/th>\r\n<\/tr>";
-        nodeData.sort(function (a, b) {
+      Table.innerHTML = "<tr>\r\n<th>ID<\/th>\r\n<th>source<\/th>\r\n<th>target<\/th>\r\n<th>total links<\/th>\r\n<th>sourceID==targetID<\/th>\r\n<th>neighbors with same id at source and target<\/th>\r\n<\/tr>";
+      nodeData.sort(function (a, b) {
         return ((a.accepted_links > b.accepted_links) ? -1 : ((a.accepted_links == b.accepted_links) ? 0 : 1));
       });
-
 
       for (let j = 0; j < nodeData.length; j++) {
         var x = document.getElementById('table').insertRow();
@@ -216,7 +218,7 @@
     }
 
     function addNode(nodeId, displayImmediately) {
-      node = {id : nodeId, online: false};
+      node = { id: nodeId, online: false };
 
       if (!(node.id in nodesById)) {
         data.nodes = [...data.nodes, node];
@@ -244,7 +246,7 @@
     }
 
     function connectNodes(sourceNodeId, targetNodeId) {
-      if(existingLinks[sourceNodeId + targetNodeId] == undefined && existingLinks[targetNodeId + sourceNodeId] == undefined) {
+      if (existingLinks[sourceNodeId + targetNodeId] == undefined && existingLinks[targetNodeId + sourceNodeId] == undefined) {
         data.links = [...data.links, { source: sourceNodeId, target: targetNodeId }];
       }
     }
@@ -257,4 +259,6 @@
     }
 
   </script>
-</body></html>
+</body>
+
+</html>
