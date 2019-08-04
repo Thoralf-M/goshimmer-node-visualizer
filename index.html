@@ -21,7 +21,7 @@
     <select id="id-input" name="node-id"></select>
     <button id="id-input-button" value="Search" onclick="centerNode(document.getElementById('id-input').value)">Search</button>
 	
-    <span>Right click to copy the id</span>
+    <span>Left click on a node to center it, right click to copy the id</span>
     <a style="padding-left: 120px" href="stats.html">table view</a>
     <!-- <span style="color:red; float:right; " id="nodes_offline">Nodes offline: 0</span> -->
     <span style="color:green; float:right; padding-right: 10px" id="nodes_online">Nodes online: 0</span>
@@ -37,6 +37,9 @@
 		document.getElementById("id-input-button").click();
 	  }
 	});
+  	document.getElementById("id-input").addEventListener("change", function(event) {
+		document.getElementById("id-input-button").click();
+    });
 
     var socket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + "159.69.158.51" + "/datastream");
 
@@ -130,7 +133,12 @@
       .linkDirectionalArrowColor(link => 'rgba(100,150,200,0.7)')
       .linkColor(link => 'rgba(200,150,200,1)')
       .height(window.innerHeight - 41)
-      .width(window.innerWidth);
+      .width(window.innerWidth)
+	  .onNodeHover(node => elem.style.cursor = node ? 'pointer' : null);
+	  
+	  const linkForce = Graph
+      .d3Force('link')
+      .distance(link => 55);
 
 
 
