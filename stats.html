@@ -15,7 +15,8 @@
       border: 1px solid rgb(110, 109, 109);
     }
 
-    th, td {
+    th,
+    td {
       text-align: left;
       padding: 16px;
     }
@@ -30,7 +31,8 @@
 <body>
   <div style="padding: 10px;">
     <span style="color:#7fff7f;  padding-right: 10px" id="nodes_online">Nodes online: 0</span>
-    <span style="color:#7fff7f;  padding-right: 10px" id="all_accepted_connections">Connections with the same id at source and target: 0</span>
+    <span style="color:#7fff7f;  padding-right: 10px" id="all_accepted_connections">Connections with the same id at
+      source and target: 0</span>
     <span style="color:#ffcc7f;  padding-right: 10px" id="neighbors_avg">Avg. total links: 0</span>
     <a style="padding-left: 120px" href="index.html">3d view</a>
   </div>
@@ -119,9 +121,7 @@
       document.getElementById("nodes_online").innerHTML = "Nodes online: " + onlineNodes.length
 
       data.links = removeDuplicates(data.links)
-      console.log(data.links.length);
       data.links = data.links.filter(e => onlineNodes.indexOf(e.source) != -1 && onlineNodes.indexOf(e.target) != -1)
-      console.log(data.links.length);
 
       linkcount()
       let avgneighbors = average(total_links);

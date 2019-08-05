@@ -20,8 +20,9 @@
 <body>
   <div style="padding: 10px;">
     <select id="id-input" name="node-id"></select>
-    <button id="id-input-button" value="Search" onclick="centerNode(document.getElementById('id-input').value)">Search</button>
-	
+    <button id="id-input-button" value="Search"
+      onclick="centerNode(document.getElementById('id-input').value)">Search</button>
+
     <span>Left click on a node to center it, right click to copy the id</span>
     <a style="padding-left: 120px" href="stats.html">table view</a>
     <!-- <span style="color:red; float:right; " id="nodes_offline">Nodes offline: 0</span> -->
@@ -31,15 +32,15 @@
   <div id="3d-graph"></div>
 
   <script>
-  
-  	document.getElementById("id-input").addEventListener("keyup", function(event) {
-	  if (event.keyCode === 13) {
-		event.preventDefault();
-		document.getElementById("id-input-button").click();
-	  }
-	});
-  	document.getElementById("id-input").addEventListener("change", function(event) {
-		document.getElementById("id-input-button").click();
+
+    document.getElementById("id-input").addEventListener("keyup", function (event) {
+      if (event.keyCode === 13) {
+        event.preventDefault();
+        document.getElementById("id-input-button").click();
+      }
+    });
+    document.getElementById("id-input").addEventListener("change", function (event) {
+      document.getElementById("id-input-button").click();
     });
 
     var socket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + "159.69.158.51" + "/datastream");
@@ -125,8 +126,6 @@
             }
           }
         }
-        console.log("neighbors: " + neighbors.length);
-        console.log(neighbors);
         return `id: ${node.id} links: ${links}`
       })
       .linkDirectionalArrowLength(1)
@@ -135,38 +134,36 @@
       .linkColor(link => 'rgba(200,150,200,1)')
       .height(window.innerHeight - 41)
       .width(window.innerWidth)
-	  .onNodeHover(node => elem.style.cursor = node ? 'pointer' : null);
-	  
-	  const linkForce = Graph
+      .onNodeHover(node => elem.style.cursor = node ? 'pointer' : null);
+
+    const linkForce = Graph
       .d3Force('link')
       .distance(link => 55);
 
 
-
     function centerNode(nodeId) {
       if (nodeId.length == 40) {
-		  let node;
+        let node;
 
-		  data.nodes.find(n => {
-			if (n.id == nodeId) {
-			  node = n;
-			}
-		  })
+        data.nodes.find(n => {
+          if (n.id == nodeId) {
+            node = n;
+          }
+        })
 
-		  const distance = 100;
-		  const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
-		  Graph.cameraPosition(
-			{ x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, // new position
-			node, // lookAt ({ x, y, z })
-			2000  // ms transition durationlogNodeId
-		  )
-	  }
+        const distance = 100;
+        const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+        Graph.cameraPosition(
+          { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, // new position
+          node, // lookAt ({ x, y, z })
+          2000  // ms transition durationlogNodeId
+        )
+      }
     }
     elem.height = 200;
 
 
-
-    var updateRequired = true; //
+    var updateRequired = true;
 
     setInterval(function () {
       if (updateRequired) {
@@ -204,20 +201,20 @@
 
         Graph.graphData(data_online);
 
-		var conceptName = $('#id-input').find(":selected").text();
-		if (!conceptName.trim()) { 
-			conceptName = "---"; 
-		}
-		$('#id-input').empty();
-		$('#id-input').append($('<option/>').attr("value", '---').text('---'));
-		$.each(data_online.nodes, function(i, option) {
-			$('#id-input').append($('<option/>').attr("value", option.id).text(option.id));
-		});
-		$('#id-input').html($('#id-input').find('option').sort(function(x, y) {
-			return $(x).text() > $(y).text() ? 1 : -1;
-		}));
-		$('#id-input').val(conceptName);
-		
+        var conceptName = $('#id-input').find(":selected").text();
+        if (!conceptName.trim()) {
+          conceptName = "---";
+        }
+        $('#id-input').empty();
+        $('#id-input').append($('<option/>').attr("value", '---').text('---'));
+        $.each(data_online.nodes, function (i, option) {
+          $('#id-input').append($('<option/>').attr("value", option.id).text(option.id));
+        });
+        $('#id-input').html($('#id-input').find('option').sort(function (x, y) {
+          return $(x).text() > $(y).text() ? 1 : -1;
+        }));
+        $('#id-input').val(conceptName);
+
         updateRequired = false;
       }
     }, 3000)
